@@ -16,6 +16,7 @@ import {
 export default function App() {
   const [postList, setPostList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [refresh, setRefresh] = useState(false);
 
   const [postTitle, setPostTitle] = useState("");
@@ -27,13 +28,20 @@ export default function App() {
   const windowWidth = useWindowDimensions().width;
   const windowHeight = useWindowDimensions().height;
 
-  const fetchData = async (limit) => {
-    const resp = await fetch(
-      `https://jsonplaceholder.typicode.com/posts?_limit=${limit}`
-    );
-    const data = await resp.json();
-    setPostList(data);
-    setIsLoading(false);
+  const fetchData = async (limit = 10) => {
+    try {
+      const resp = await fetch(
+        `https://jsonplaceholder.typicode.com/posts?_limit=${limit}`
+      );
+      const data = await resp.json();
+      setPostList(data);
+      setIsLoading(false);
+      setError("");
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+      setIsLoading(false);
+      setError("Failed to fetch post list");
+    }
   };
 
   const handleRefresh = () => {
@@ -42,7 +50,31 @@ export default function App() {
     setRefresh(false);
   };
 
-  const addPost = () => {};
+  const addPost = async () => {
+    setIsPosting(true);
+    try {
+      const resp = await fetch("https://jsonplaceholder.typicode.com/posts", {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: postTitle,
+          body: postBody,
+        }),
+      });
+
+      const newPost = await resp.json();
+      setPostList([newPost, ...postList]);
+      setPostTitle("");
+      setPostBody("");
+      setIsPosting(false);
+      setError("");
+    } catch (error) {
+      console.error("Error adding new post: ", error);
+      setError("Failed to add new post");
+    }
+  };
 
   useEffect(() => {
     fetchData(7);
@@ -68,122 +100,149 @@ export default function App() {
         { backgroundColor: isDarkMode ? "#071739" : "#a4b5c4" },
       ]}
     >
-      <>
-        <Text
-          style={[
-            styles.headingText,
-            { color: isDarkMode ? "#a4b5c4" : "#071739" },
-          ]}
-        >
-          Networking in React Native
-        </Text>
-
-        <Switch
-          value={isDarkMode}
-          onValueChange={() => setIsDarkMode(!isDarkMode)}
-          trackColor={{ false: "#071739", ture: "#a4b5c4" }}
-          thumbColor={"white"}
-        />
-
-        <View style={[styles.inputContainer, {backgroundColor: isDarkMode ? '#a4b5c4' : '#cdd5db'}]}>
-          <Text style={{textAlign: 'center', fontSize: 25, marginBottom: 8}}>Add New Post</Text>
-          <TextInput
-            style={[styles.input, {backgroundColor: isDarkMode ? '#cdd5db' : '#a4b5c4', color: isDarkMode ? 'black' : 'white',}]}
-            placeholder="Post's Title"
-            value={postTitle}
-            onChangeText={setPostTitle}
-          />
-
-          <TextInput
-            style={[styles.input, {backgroundColor: isDarkMode ? '#cdd5db' : '#a4b5c4', color: isDarkMode ? 'black' : 'white',}]}
-            placeholder="Post's Body"
-            value={postBody}
-            onChangeText={setPostBody}
-          />
-
-          <Button
-            title={isPoasting ? "Adding.." : "Add Post"}
-            // onPress={addPost}
-            disabled={isPoasting}
-          />
+      {error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
+      ) : (
+        <>
+          <Text
+            style={[
+              styles.headingText,
+              { color: isDarkMode ? "#a4b5c4" : "#071739" },
+            ]}
+          >
+            Networking in React Native
+          </Text>
 
-        <View style={styles.listContainer}>
-          <FlatList
-            data={postList}
-            renderItem={({ item }) => {
-              return (
-                <View
+          <Switch
+            value={isDarkMode}
+            onValueChange={() => setIsDarkMode(!isDarkMode)}
+            trackColor={{ false: "#071739", ture: "#a4b5c4" }}
+            thumbColor={"white"}
+          />
+
+          <View
+            style={[
+              styles.inputContainer,
+              { backgroundColor: isDarkMode ? "#a4b5c4" : "#cdd5db" },
+            ]}
+          >
+            <Text
+              style={{ textAlign: "center", fontSize: 25, marginBottom: 8 }}
+            >
+              Add New Post
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDarkMode ? "#cdd5db" : "#a4b5c4",
+                  color: isDarkMode ? "black" : "white",
+                },
+              ]}
+              placeholder="Post's Title"
+              value={postTitle}
+              onChangeText={setPostTitle}
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDarkMode ? "#cdd5db" : "#a4b5c4",
+                  color: isDarkMode ? "black" : "white",
+                },
+              ]}
+              placeholder="Post's Body"
+              value={postBody}
+              onChangeText={setPostBody}
+            />
+
+            <Button
+              title={isPoasting ? "Adding.." : "Add Post"}
+              onPress={addPost}
+              disabled={isPoasting}
+            />
+          </View>
+
+          <View style={styles.listContainer}>
+            <FlatList
+              data={postList}
+              renderItem={({ item }) => {
+                return (
+                  <View
+                    style={[
+                      styles.card,
+                      {
+                        width: windowWidth > 500 ? "75%" : "100%",
+                      },
+                      { backgroundColor: isDarkMode ? "#a4b5c4" : "#071739" },
+                      { shadowColor: isDarkMode ? "white" : "black" },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.titleText,
+                        { color: isDarkMode ? "midnightblue" : "#e3c39d" },
+                      ]}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.bodyText,
+                        { color: isDarkMode ? "#223a59" : "#cdd5db" },
+                      ]}
+                    >
+                      {item.body}
+                    </Text>
+                  </View>
+                );
+              }}
+              ItemSeparatorComponent={() => {
+                <View style={{ height: 16 }} />;
+              }}
+              ListEmptyComponent={
+                <Text
+                  style={{
+                    color: "#db222a",
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  No Posts Yet
+                </Text>
+              }
+              ListHeaderComponent={
+                <Text
                   style={[
-                    styles.card,
-                    {
-                      width: windowWidth > 500 ? "75%" : "100%",
-                    },
-                    { backgroundColor: isDarkMode ? "#a4b5c4" : "#071739" },
-                    { shadowColor: isDarkMode ? "white" : "black" },
+                    styles.headText,
+                    styles.common,
+                    { color: isDarkMode ? "#e5e2d3" : "#e5e2d3" },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.titleText,
-                      { color: isDarkMode ? "midnightblue" : "#e3c39d" },
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.bodyText,
-                      { color: isDarkMode ? "#223a59" : "#cdd5db" },
-                    ]}
-                  >
-                    {item.body}
-                  </Text>
-                </View>
-              );
-            }}
-            ItemSeparatorComponent={() => {
-              <View style={{ height: 16 }} />;
-            }}
-            ListEmptyComponent={
-              <Text
-                style={{
-                  color: "#db222a",
-                  fontSize: 24,
-                  fontWeight: "bold",
-                  textAlign: "center",
-                }}
-              >
-                No Posts Yet
-              </Text>
-            }
-            ListHeaderComponent={
-              <Text
-                style={[
-                  styles.headText,
-                  styles.common,
-                  { color: isDarkMode ? "#e5e2d3" : "#e5e2d3" },
-                ]}
-              >
-                GET List from API
-              </Text>
-            }
-            ListFooterComponent={
-              <Text
-                style={[
-                  styles.footText,
-                  styles.common,
-                  { color: isDarkMode ? "#e5e2d3" : "#e5e2d3" },
-                ]}
-              >
-                End of List
-              </Text>
-            }
-            refreshing={refresh}
-            onRefresh={handleRefresh}
-          />
-        </View>
-      </>
+                  GET List from API
+                </Text>
+              }
+              ListFooterComponent={
+                <Text
+                  style={[
+                    styles.footText,
+                    styles.common,
+                    { color: isDarkMode ? "#e5e2d3" : "#e5e2d3" },
+                  ]}
+                >
+                  End of List
+                </Text>
+              }
+              refreshing={refresh}
+              onRefresh={handleRefresh}
+            />
+          </View>
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -191,7 +250,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: StatusBar.currentHeight,
   },
   headingText: {
@@ -256,5 +315,20 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
     fontSize: 16,
+  },
+
+  errorContainer: {
+    width: '90%',
+    backgroundColor: "#ffc0cb",
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    margin: 16,
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#d8000c",
+    fontSize: 16,
+    textAlign: "center",
   },
 });
