@@ -21,7 +21,7 @@ export default function App() {
 
   const [postTitle, setPostTitle] = useState("");
   const [postBody, setPostBody] = useState("");
-  const [isPoasting, setIsPosting] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -54,7 +54,7 @@ export default function App() {
     setIsPosting(true);
     try {
       const resp = await fetch("https://jsonplaceholder.typicode.com/posts", {
-        method: "post",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -73,19 +73,20 @@ export default function App() {
     } catch (error) {
       console.error("Error adding new post: ", error);
       setError("Failed to add new post");
+      setIsPosting(false); // Ensure isPosting is reset
     }
   };
 
   useEffect(() => {
     fetchData(7);
-  });
+  }, []); // Added empty dependency array to run only on mount
 
   if (isLoading) {
     return (
       <SafeAreaView
         style={[styles.loadingController, { backgroundColor: "#a4b5c4" }]}
       >
-        <ActivityIndicator size="larger" color="#00ffff" />
+        <ActivityIndicator size="large" color="#00ffff" />
         <Text style={{ color: "#071739", fontSize: 20, fontStyle: "italic" }}>
           LOADING...
         </Text>
@@ -118,7 +119,7 @@ export default function App() {
           <Switch
             value={isDarkMode}
             onValueChange={() => setIsDarkMode(!isDarkMode)}
-            trackColor={{ false: "#071739", ture: "#a4b5c4" }}
+            trackColor={{ false: "#071739", true: "#a4b5c4" }} // Fixed typo here
             thumbColor={"white"}
           />
 
@@ -160,49 +161,47 @@ export default function App() {
             />
 
             <Button
-              title={isPoasting ? "Adding.." : "Add Post"}
+              title={isPosting ? "Adding.." : "Add Post"}
               onPress={addPost}
-              disabled={isPoasting}
+              disabled={isPosting}
             />
           </View>
 
           <View style={styles.listContainer}>
             <FlatList
               data={postList}
-              renderItem={({ item }) => {
-                return (
-                  <View
+              renderItem={({ item }) => (
+                <View
+                  style={[
+                    styles.card,
+                    {
+                      width: windowWidth > 500 ? "75%" : "100%",
+                    },
+                    { backgroundColor: isDarkMode ? "#a4b5c4" : "#071739" },
+                    { shadowColor: isDarkMode ? "white" : "black" },
+                  ]}
+                >
+                  <Text
                     style={[
-                      styles.card,
-                      {
-                        width: windowWidth > 500 ? "75%" : "100%",
-                      },
-                      { backgroundColor: isDarkMode ? "#a4b5c4" : "#071739" },
-                      { shadowColor: isDarkMode ? "white" : "black" },
+                      styles.titleText,
+                      { color: isDarkMode ? "midnightblue" : "#e3c39d" },
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.titleText,
-                        { color: isDarkMode ? "midnightblue" : "#e3c39d" },
-                      ]}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.bodyText,
-                        { color: isDarkMode ? "#223a59" : "#cdd5db" },
-                      ]}
-                    >
-                      {item.body}
-                    </Text>
-                  </View>
-                );
-              }}
-              ItemSeparatorComponent={() => {
-                <View style={{ height: 16 }} />;
-              }}
+                    {item.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.bodyText,
+                      { color: isDarkMode ? "#223a59" : "#cdd5db" },
+                    ]}
+                  >
+                    {item.body}
+                  </Text>
+                </View>
+              )}
+              ItemSeparatorComponent={() => (
+                <View style={{ height: 16 }} />
+              )}
               ListEmptyComponent={
                 <Text
                   style={{
